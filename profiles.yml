@@ -1,0 +1,26 @@
+# dbt connection profile — ClickHouse Cloud
+# ─────────────────────────────────────────────────────────────────────────────
+# Place this file at:  ~/.dbt/profiles.yml   (keeps credentials out of repo)
+# OR keep it here and run:  dbt run --profiles-dir .
+#
+# Credentials are read from environment variables (set them from your .env file):
+#   Windows PowerShell:
+#     $env:CLICKHOUSE_HOST     = "xxx.clickhouse.cloud"
+#     $env:CLICKHOUSE_PASSWORD = "your_password"
+#   Or use a tool like direnv, or just hardcode for local dev (don't commit).
+# ─────────────────────────────────────────────────────────────────────────────
+
+ios_ua_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: clickhouse
+      host: "{{ env_var('CLICKHOUSE_HOST') }}"
+      port: 8443                          # ClickHouse Cloud uses HTTPS port
+      user: "{{ env_var('CLICKHOUSE_USER', 'default') }}"
+      password: "{{ env_var('CLICKHOUSE_PASSWORD') }}"
+      schema: marts                       # default schema for dbt output
+      secure: true                        # TLS required for ClickHouse Cloud
+      verify: true
+      connect_timeout: 10
+      send_receive_timeout: 300

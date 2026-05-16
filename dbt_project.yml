@@ -1,0 +1,39 @@
+name: 'ios_ua_analytics'
+version: '1.0.0'
+config-version: 2
+
+profile: 'ios_ua_analytics'
+
+model-paths: ["models"]
+test-paths:  ["tests"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+# ─── Default model materializations by layer ──────────────────────────────────
+models:
+  ios_ua_analytics:
+
+    staging:
+      +materialized: view          # staging = views (lightweight, always fresh)
+      +schema: staging
+
+    intermediate:
+      +materialized: table         # intermediate = tables (reused by multiple marts)
+      +schema: intermediate
+
+    marts:
+      +materialized: table         # marts = tables (BI reads these)
+      +schema: marts
+      # mart_creative_burnout uses incremental for production-readiness demo
+      mart_creative_burnout:
+        +materialized: incremental
+        +incremental_strategy: delete+insert
+        +unique_key: [creative_id, stat_date]
+
+# ─── Global variables ─────────────────────────────────────────────────────────
+vars:
+  burnout_ctr_threshold: 0.70      # CTR drops below 70% of peak → burnout
+  min_impressions_for_burnout: 500 # ignore low-impression days
+  cohort_days: [1, 3, 7, 14, 30]  # D1/D3/D7/D14/D30 retention windows

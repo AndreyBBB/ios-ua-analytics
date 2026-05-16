@@ -1,0 +1,88 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw landing tables loaded from the Python ingestion pipeline."
+    database: raw
+    schema: raw
+    tables:
+
+      - name: campaigns
+        description: "Paid UA campaigns across all networks."
+        columns:
+          - name: campaign_id
+            description: "Unique campaign identifier."
+            data_tests:
+              - not_null
+              - unique
+          - name: network
+            data_tests:
+              - not_null
+              - accepted_values:
+                  values: ["Meta", "Google_UAC", "Apple_Search_Ads", "TikTok", "Snap"]
+          - name: daily_budget
+            data_tests:
+              - not_null
+
+      - name: creatives
+        description: "Individual ad creatives, one row per creative."
+        columns:
+          - name: creative_id
+            data_tests:
+              - not_null
+              - unique
+          - name: campaign_id
+            data_tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'campaigns')
+                  field: campaign_id
+          - name: format
+            data_tests:
+              - accepted_values:
+                  values: ["video_15s", "video_30s", "static_image", "carousel"]
+
+      - name: ad_daily_stats
+        description: "Daily ad delivery metrics per creative/campaign."
+        columns:
+          - name: stat_date
+            data_tests: [not_null]
+          - name: campaign_id
+            data_tests: [not_null]
+          - name: creative_id
+            data_tests: [not_null]
+          - name: spend_usd
+            data_tests: [not_null]
+
+      - name: skan_postbacks
+        description: "SKAN 4.0 postbacks — privacy-preserving iOS install attribution."
+        columns:
+          - name: postback_id
+            data_tests:
+              - not_null
+              - unique
+          - name: conversion_value
+            data_tests:
+              - not_null
+          - name: skan_version
+            data_tests:
+              - accepted_values:
+                  values: ["3.0", "4.0"]
+          - name: privacy_threshold
+            data_tests:
+              - accepted_values:
+                  values: ["none", "low", "medium"]
+
+      - name: iap_events
+        description: "In-app purchase and subscription events."
+        columns:
+          - name: event_id
+            data_tests:
+              - not_null
+              - unique
+          - name: event_type
+            data_tests:
+              - accepted_values:
+                  values: ["trial_start", "subscription_start", "subscription_renew", "purchase"]
+          - name: revenue_usd
+            data_tests: [not_null]
