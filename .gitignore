@@ -1,0 +1,32 @@
+# Environment / credentials — NEVER commit
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
+.venv/
+
+# Generated data (too large for git)
+ingestion/data/
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+
+# Power BI (binary, track separately or via LFS)
+# *.pbix   ← uncomment to exclude, or use Git LFS to include it
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker/airflow/.env
+
+# IDE
+.vscode/
+.idea/

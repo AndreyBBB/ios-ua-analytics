@@ -1,0 +1,45 @@
+version: "3.8"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ClickHouse — local analytics warehouse
+#
+# HOW TO START:
+#   cd docker/clickhouse
+#   docker compose up -d
+#
+# HOW TO STOP:
+#   docker compose down
+#
+# HOW TO CONNECT (from your machine):
+#   HTTP API  → http://localhost:8123   (used by clickhouse-connect / Power BI)
+#   Native TCP→ localhost:9000           (used by clickhouse-client CLI)
+#   User: default  |  Password: (empty)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3           # LTS release
+    container_name: ua_clickhouse
+    restart: unless-stopped
+    ports:
+      - "8123:8123"   # HTTP interface  → Power BI / Python connect here
+      - "9000:9000"   # Native TCP      → clickhouse-client CLI
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse             # persists your data
+      - ./init:/docker-entrypoint-initdb.d              # runs SQL on first boot
+    environment:
+      CLICKHOUSE_DB: ua_raw
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  clickhouse_data:

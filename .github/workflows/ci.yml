@@ -1,0 +1,68 @@
+name: dbt CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'dbt/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'dbt/**'
+
+jobs:
+  dbt-test:
+    name: Run dbt tests
+    runs-on: ubuntu-latest
+    # Credentials stored as GitHub repository secrets (Settings → Secrets → Actions)
+    # Add: CLICKHOUSE_HOST, CLICKHOUSE_PASSWORD
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install dbt-core dbt-clickhouse clickhouse-connect pandas numpy faker python-dotenv
+
+      - name: Generate synthetic data
+        run: python ingestion/generate_data.py
+
+      - name: Load data to ClickHouse Cloud
+        env:
+          CLICKHOUSE_HOST: ${{ secrets.CLICKHOUSE_HOST }}
+          CLICKHOUSE_PORT: 8443
+          CLICKHOUSE_USER: default
+          CLICKHOUSE_PASSWORD: ${{ secrets.CLICKHOUSE_PASSWORD }}
+        run: python ingestion/load_to_clickhouse.py
+
+      - name: dbt deps
+        working-directory: dbt
+        run: dbt deps
+
+      - name: dbt run
+        working-directory: dbt
+        env:
+          CLICKHOUSE_HOST: ${{ secrets.CLICKHOUSE_HOST }}
+          CLICKHOUSE_PASSWORD: ${{ secrets.CLICKHOUSE_PASSWORD }}
+        run: dbt run --profiles-dir .
+
+      - name: dbt test
+        working-directory: dbt
+        env:
+          CLICKHOUSE_HOST: ${{ secrets.CLICKHOUSE_HOST }}
+          CLICKHOUSE_PASSWORD: ${{ secrets.CLICKHOUSE_PASSWORD }}
+        run: dbt test --profiles-dir .
+
+      - name: Upload dbt artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-artifacts
+          path: dbt/target/
