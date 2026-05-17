@@ -53,7 +53,9 @@ aggregated as (
         )                                                   as monetisation_rate
 
     from postbacks
-    group by 1, 2, 3, 4, 5, 6, 7
+    group by
+        install_date, campaign_id, creative_id,
+        network, country, skan_version, postback_sequence
 )
 
 select * from aggregated

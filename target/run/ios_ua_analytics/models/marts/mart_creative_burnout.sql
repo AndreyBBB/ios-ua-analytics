@@ -11,7 +11,7 @@
         
   
 
-  insert into `marts_marts`.`mart_creative_burnout`
+  insert into `marts_marts`.`mart_creative_burnout__dbt_new_data_9eaadd4e_5410_42cd_861d_a2a7553639f9`
         ("stat_date", "creative_id", "campaign_id", "network", "country", "creative_name", "format", "format_group", "is_video", "launch_date", "day_of_life", "impressions", "clicks", "spend_usd", "installs", "ctr", "ctr_7d_avg", "cpi_usd", "cumulative_spend_usd", "cumulative_installs", "absolute_peak_ctr", "peak_day_of_life", "burnout_date", "burnout_day_of_life", "burnout_score", "lifecycle_stage", "is_post_burnout", "wasted_spend_usd", "ctr_vs_peak_ratio", "cpi_vs_best_ratio")-- mart_creative_burnout  ★ HEADLINE INSIGHT
 -- ─────────────────────────────────────────────────────────────────────────────
 -- One row per (creative_id, stat_date).
@@ -39,6 +39,9 @@ with daily as (
     select * from `marts_intermediate`.`int_creative_daily_metrics`
     where impressions >= 500
 
+    
+        -- Recalculate the last 14 days to refresh rolling windows
+        and stat_date >= (select max(stat_date) - interval 14 day from `marts_marts`.`mart_creative_burnout`)
     
 )
 
@@ -132,4 +135,4 @@ inner join `marts_intermediate`.`int_creative_peaks` p
 left join `marts_intermediate`.`int_burnout_events` be
     on be.creative_id = d.creative_id
   
-    
+      

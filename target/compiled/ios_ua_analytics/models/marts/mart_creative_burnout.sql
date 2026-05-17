@@ -26,6 +26,9 @@ with daily as (
     where impressions >= 500
 
     
+        -- Recalculate the last 14 days to refresh rolling windows
+        and stat_date >= (select max(stat_date) - interval 14 day from `marts_marts`.`mart_creative_burnout`)
+    
 )
 
 select

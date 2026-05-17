@@ -8,6 +8,12 @@
 --   - Privacy threshold impact analysis
 --   - CV distribution & funnel (install → engagement → trial → revenue)
 --   - SKAN vs non-SKAN install reconciliation
+--
+-- ClickHouse notes:
+--   • USING replaced with ON (USING stores column with table alias prefix)
+--   • camp.campaign_name / camp.objective have explicit AS aliases
+--   • Named GROUP BY throughout (no positional)
+--   • r.* from reconciled CTE is safe: reconciled only has coalesce() columns
 
 with skan as (
     select * from {{ ref('int_skan_cv_mapping') }}
@@ -17,14 +23,14 @@ with skan as (
 ad_stats as (
     select
         stat_date                         as install_date,
-        campaign_id,
-        creative_id,
-        network,
-        country,
+        campaign_id                       as campaign_id,
+        creative_id                       as creative_id,
+        network                           as network,
+        country                           as country,
         sum(installs)                     as reported_installs,
         sum(spend_usd)                    as spend_usd
     from {{ ref('stg_ad_stats') }}
-    group by 1, 2, 3, 4, 5
+    group by stat_date, campaign_id, creative_id, network, country
 ),
 
 campaigns as (
@@ -76,9 +82,29 @@ reconciled as (
 -- Add derived analytics columns
 final as (
     select
-        r.*,
-        camp.campaign_name,
-        camp.objective,
+        r.install_date                  as install_date,
+        r.campaign_id                   as campaign_id,
+        r.creative_id                   as creative_id,
+        r.network                       as network,
+        r.country                       as country,
+        r.skan_postbacks                as skan_postbacks,
+        r.fine_cv_postbacks             as fine_cv_postbacks,
+        r.low_threshold_postbacks       as low_threshold_postbacks,
+        r.medium_threshold_postbacks    as medium_threshold_postbacks,
+        r.cv_no_event                   as cv_no_event,
+        r.cv_engagement                 as cv_engagement,
+        r.cv_trial                      as cv_trial,
+        r.cv_low_revenue                as cv_low_revenue,
+        r.cv_mid_revenue                as cv_mid_revenue,
+        r.cv_high_revenue               as cv_high_revenue,
+        r.revenue_signal_postbacks      as revenue_signal_postbacks,
+        r.skan_estimated_revenue_usd    as skan_estimated_revenue_usd,
+        r.skan_monetisation_rate        as skan_monetisation_rate,
+        r.avg_cv                        as avg_cv,
+        r.mmp_installs                  as mmp_installs,
+        r.spend_usd                     as spend_usd,
+        camp.campaign_name              as campaign_name,
+        camp.objective                  as objective,
 
         -- SKAN coverage: what % of MMP installs got a SKAN postback?
         round(
@@ -115,7 +141,8 @@ final as (
         )                                                    as skan_roas
 
     from reconciled r
-    left join campaigns camp using (campaign_id)
+    left join campaigns camp
+        on camp.campaign_id = r.campaign_id
 )
 
 select * from final

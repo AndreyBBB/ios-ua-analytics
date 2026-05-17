@@ -10,7 +10,7 @@
         
   
 
-  insert into `marts_marts`.`mart_unit_economics`
+  insert into `marts_marts`.`mart_unit_economics__dbt_backup`
         ("campaign_id", "campaign_name", "network", "country", "objective", "daily_budget_usd", "total_installs", "total_spend_usd", "cac_usd", "ltv_d7_usd", "ltv_d14_usd", "ltv_d30_usd", "ltv_total_usd", "total_revenue_usd", "roas_d7", "roas_d14", "roas_d30", "roas_total", "campaign_roas", "payback_d7", "payback_d14", "payback_d30", "payback_period_bucket")-- mart_unit_economics
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Campaign-level unit economics summary for BI.
